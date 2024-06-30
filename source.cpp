@@ -96,6 +96,8 @@ char** regrow2DchArr(char** arr, int size, char* str){
 void Register(char* username, char* password, char* ADMIN_USER_FILE, char* PROFILES, const int USER_PASS_SIZE, bool* login, char* USERNAMES, int* total_users,bool root_mode = false){
     bool wrong_pass = false;
     bool already_exists = false;
+
+    // getting username and password
     while(true){
         system("cls");
         cout << "--REGISTRATION--" << endl;
@@ -121,6 +123,7 @@ void Register(char* username, char* password, char* ADMIN_USER_FILE, char* PROFI
         if (!compareStr(password, confPass)){
             cout << "Passwords don't match, Try Again..." << endl;
             wrong_pass = true;
+            delete[] confPass;
         }
         else{
             delete[] confPass;
@@ -128,6 +131,7 @@ void Register(char* username, char* password, char* ADMIN_USER_FILE, char* PROFI
         }
     }
 
+    // writing username and password to file
     char* path = new char [100];
     path = {"\0"};
 
@@ -144,6 +148,7 @@ void Register(char* username, char* password, char* ADMIN_USER_FILE, char* PROFI
     fout << password;
     fout.close();
 
+    // making the task folder
     char* task_folder = concat("data\\tasks\\", username);
     char* task_folder_command = concat("mkdir ", concat(task_folder, "\\grouped"));
 
@@ -154,10 +159,15 @@ void Register(char* username, char* password, char* ADMIN_USER_FILE, char* PROFI
     fout1 << "0";
     fout1.close();
 
+    // making used tags file for keeping track of tags used.
+    fout1.open(concat(task_folder, "\\used_tags.txt"));
+    fout1 << "0";
+    fout1.close();
+
     delete[] task_folder;
     delete[] task_folder_command;
 
-
+    // updating total users
     ifstream fin;
     fin.open(USERNAMES);
     fin >> *total_users;
@@ -261,6 +271,16 @@ void AddTask(char* username){
     if(add_tags == 'y' || add_tags == 'Y'){
         cout << "Enter tag (without spaces MAX 50 characters): ";
         cin >> tag;
+
+        int total_tags = 0;
+        ifstream fin;
+        fin.open(concat("data\\tasks\\", concat(username, "\\used_tags.txt")));
+        fin >> total_tags;
+        fin.close();
+        ofstream fout;
+        fout.open(concat("data\\tasks\\", concat(username, "\\used_tags.txt")));
+        fout << total_tags + 1;
+        fout.close();
     }
 
     char task_description[1000];
@@ -328,6 +348,67 @@ void AddTask(char* username){
     getch();
 }
 
+int getSelection(int* selection_var, int max){
+    bool arrow_key_mode = false;
+    int mode = 0;
+    while(true){
+        int key = getch();
+        if(key == 13){
+            mode = 5;
+            return mode;
+        }
+        if(key == 27){
+            exit(0);
+        }
+        if(arrow_key_mode){
+            switch (key)
+            {
+            case 72:    // Up
+                mode = 1;
+                arrow_key_mode = false;
+                break;
+            
+            case 80:    // Down
+                mode = 2;
+                arrow_key_mode = false;
+                break;
+            
+            case 77:    // Right
+                mode = 3;
+                arrow_key_mode = false;
+                break;
+            
+            case 75:    // Left
+                mode = 4;
+                arrow_key_mode = false;
+                break;
+            
+            default:
+                mode = 0;
+                break;
+            }
+            if (mode != 0){
+                if (mode == 1){
+                    *selection_var -= 1;
+                    if (*selection_var < 0){
+                        *selection_var = max - 1;
+                    }
+                }
+                if (mode == 2){
+                    *selection_var += 1;
+                    if (*selection_var > max - 1){
+                        *selection_var = 0;
+                    }
+                }
+                return mode;
+            }
+        }
+        if(key == 224){
+            arrow_key_mode = true;
+        }
+    }
+}
+
 void displayUsers(){
     ifstream fin;
     fin.open("data\\profiles\\users.txt");
@@ -341,6 +422,11 @@ void displayUsers(){
 }
 
 int main(){
+    char NotLoginedOptions[4][30] = { "Login", "Register", "EXPERIMENTAL ERASE DATA!!","Exit" };
+    char UserOption[3][15] = { "Add Task", "View Tasks", "Logout" };
+    system("cls");
+    int selection_pos = 0;
+    int select_mode = 0;
     bool login = false;
     bool superuser = false;
     const int USER_PASS_SIZE = 20;
@@ -368,28 +454,37 @@ int main(){
 
     while(true){
     if(login){
-        system("cls");
-        cout << "Welcome " << username;
-        if(superuser){
-            cout << " - Admin" << endl;
-        }
-        cout << endl;
+        while (true) // Main Logined Loop
+        {
+            system("cls");
+            cout << "Welcome " << username;
+            if(superuser){
+                cout << " - Admin" << endl;
+            }
+            cout << endl;
 
-        cout << "What you want to do?" << endl;
-        cout << "1) Add Task" << endl;
-        cout << "2) Display Tasks" << endl;
-        cout << "3) Logout" << endl;
-        cout << "Enter the number to select the option: ";
-        char choice[20];
-        cin >> choice;
-        if(compareStr(choice, "1")){
-            AddTask(username);
-        }
-        else if(compareStr(choice, "2")){
-            // DisplayTasks(username, password, ADMIN_USER_FILE, PROFILES, USER_PASS_SIZE, &login, USERNAMES, &total_users);
-        }
-        else if(compareStr(choice, "3")){
-            login = false;
+            cout << "What you want to do?" << endl;
+            for (int i = 0; i < 3; i++){
+                if(i == selection_pos){
+                    cout << ">> " << UserOption[i] << endl;
+                }
+                else{
+                    cout << "-- " << UserOption[i] << endl;
+                }
+            }
+
+            select_mode = getSelection(&selection_pos, 3);
+            if(select_mode == 5){
+                if (selection_pos == 0){
+                    AddTask(username);
+                }
+                else if (selection_pos == 1){
+                }
+                else if (selection_pos == 2){
+                    login = false;
+                    break;
+                }
+            }
         }
     }
     else{
@@ -397,40 +492,39 @@ int main(){
 
         fin.open(ADMIN_USER_FILE);
         if (fin.is_open()){
+            while(true) // Main Generic Loop
+            {
             system("cls");
-            cout << "Total users: " << total_users << endl;
             cout << "Welcome to Task MANAGER" << endl << endl;
             cout << "What you want to do?" << endl;
-            cout << "1) Login" << endl;
-            cout << "2) Register" << endl;
-            cout << "3) ERASE ALL DATA !!" << endl; // delete all data (for testing purposes only)
-            cout << "4) Display Names" << endl;
 
-            if(invalid_choice){
-                cout << "INVALID OPTION ENTERED! Please Enter from above (numbers)" << endl;
-                invalid_choice = false;
+            for (int i = 0; i < 3; i++){
+                if(i == selection_pos){
+                    cout << ">> " << NotLoginedOptions[i] << endl;
+                }
+                else{
+                    cout << "-- " << NotLoginedOptions[i] << endl;
+                }
             }
 
-            cout << "Enter the number to select the option: ";
-            char choice[20];
-            cin >> choice;
-            if(compareStr(choice, "1"))
-            Login(username, password, ADMIN_USER_FILE, PROFILES, &superuser, &login);
-            else if(compareStr(choice, "2")){
-                Register(username, password, ADMIN_USER_FILE, PROFILES, USER_PASS_SIZE, &login, USERNAMES, &total_users);
-            }
-            else if(compareStr(choice, "3")){
-            fin.close();
-            reset_data();
-            return 0;
-            }
-            else if(compareStr(choice, "4")){
-                displayUsers();
-                cout << "Press any key to continue..." << endl;
-                getch();
-            }
-            else {
-                invalid_choice = true;
+            select_mode = getSelection(&selection_pos, 3);
+            if(select_mode == 5){
+                if (selection_pos == 0){
+                    Login(username, password, ADMIN_USER_FILE, PROFILES, &superuser, &login);
+                    break;
+                }
+                else if (selection_pos == 1){
+                    Register(username, password, ADMIN_USER_FILE, PROFILES, USER_PASS_SIZE, &login, USERNAMES, &total_users);
+                }
+                else if (selection_pos == 2){
+                    fin.close();
+                    reset_data();
+                    return 0;
+                }
+                else if (selection_pos == 3){
+                    exit(0);
+                }
+            }    
             }
         }
         else{
