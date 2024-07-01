@@ -256,40 +256,191 @@ void reset_data(){
     fout1.close();
 }
 
+int getSelection(int* selection_var, int max, char exit_key = 'b'){
+    bool arrow_key_mode = false;
+    int mode = 0;
+    while(true){
+        int key = getch();
+        if(key == 13){
+            mode = 5;
+            return mode;
+        }
+        if(key == 27){
+            exit(0);
+        }
+        if(key == exit_key){
+            mode = 6;
+            return mode;
+        }
+        if(arrow_key_mode){
+            switch (key)
+            {
+            case 72:    // Up
+                mode = 1;
+                arrow_key_mode = false;
+                break;
+            
+            case 80:    // Down
+                mode = 2;
+                arrow_key_mode = false;
+                break;
+            
+            case 77:    // Right
+                mode = 3;
+                arrow_key_mode = false;
+                break;
+            
+            case 75:    // Left
+                mode = 4;
+                arrow_key_mode = false;
+                break;
+            
+            default:
+                mode = 0;
+                break;
+            }
+            if (mode != 0){
+                if (mode == 1){
+                    *selection_var -= 1;
+                    if (*selection_var < 0){
+                        *selection_var = max - 1;
+                    }
+                }
+                if (mode == 2){
+                    *selection_var += 1;
+                    if (*selection_var > max - 1){
+                        *selection_var = 0;
+                    }
+                }
+                return mode;
+            }
+        }
+        if(key == 224){
+            arrow_key_mode = true;
+        }
+    }
+}
+
 void AddTask(char* username){
-    char task_title[100];
+    system("cls");
+    char Choices[2][4] = {"Yes", "No"};
+    int mode = 0;
+
+    char task_title[100] = "\0";
+    char tag[50] = "\0";
+    char task_description[1000] = "\0";
+    int total_tags = 0;
+    bool add_tags = false;
+    int selection_pos = 0;
+
+    // Title
+    cout << "-- Add Task --" << endl << endl;
     cout << "Enter task title (MAX 100 characters): ";
     cin.ignore();
     cin.getline(task_title, 100);
 
-    char add_tags = 'n';
-    int total_tags = 0;
-    cout << "Do you want to add tags? (y/n): ";
-    cin >> add_tags;
-    char tag[50] = "\0";
+    while (true) // add tag yes/no loop
+    {
+        system("cls");
+        cout << "-- Add Task --" << endl << endl;
+        cout << "Title: " << task_title << endl;
+        cout << "Do you want to add a Tag to this task?" << endl;
+        for(int i = 0; i < 2; i++){
+            if(i == selection_pos){
+                cout << ">> " << Choices[i] << endl;
+            }
+            else{
+                cout << "-- " << Choices[i] << endl;
+            }
+        }
 
-    if(add_tags == 'y' || add_tags == 'Y'){
-        cout << "Enter tag (without spaces MAX 50 characters): ";
-        cin >> tag;
+        mode = getSelection(&selection_pos, 2);
 
-        int total_tags = 0;
-        ifstream fin;
-        fin.open(concat("data\\tasks\\", concat(username, "\\used_tags.txt")));
-        fin >> total_tags;
-        fin.close();
-        ofstream fout;
-        fout.open(concat("data\\tasks\\", concat(username, "\\used_tags.txt")));
-        fout << total_tags + 1;
-        fout.close();
+        if(mode == 5){
+            if(selection_pos == 0){
+                system("cls");
+                cout << "-- Add Task --" << endl << endl;
+                cout << "Title: " << task_title << endl;
+                cout << "Enter tag (without spaces MAX 50 characters): ";
+                cin >> tag;
+                add_tags = true;
+                break;
+            }
+            if(selection_pos == 1){
+                add_tags = false;
+                break;
+            }
+        }
+
     }
 
-    char task_description[1000];
-    cout << endl << "Enter task description (optional - enter only 'Q' to skip): ";
-    cin.ignore();
-    cin.getline(task_description, 1000);
+    while (true) // add Discription yes/no loop
+    {
+        system("cls");
+        cout << "-- Add Task --" << endl << endl;
+        cout << "Title: " << task_title << endl;
+        cout << "Tag: " << ((add_tags)?tag:"(No Tag)") << endl;
+        cout << "Add description for this Task?" << endl;
+        for(int i = 0; i < 2; i++){
+            if(i == selection_pos){
+                cout << ">> " << Choices[i] << endl;
+            }
+            else{
+                cout << "-- " << Choices[i] << endl;
+            }
+        }
 
-    if (compareStr(task_description, "Q")){
-        task_description[0] = '\0';
+        mode = getSelection(&selection_pos, 2);
+
+        if(mode == 5){
+            if(selection_pos == 0){
+                system("cls");
+                cout << "-- Add Task --" << endl << endl;
+                cout << "Title: " << task_title << endl;
+                cout << "Tag: " << ((add_tags)?tag:"(No Tag)") << endl;
+                cout << "Enter the desription (MAX 1000 characters): ";
+                cin.ignore();
+                cin.getline(task_description, 1000);
+                break;
+            }
+            if(selection_pos == 1){
+                break;
+            }
+        }
+        else if(mode == 6){
+
+        }
+
+    }
+    
+    system("cls");
+    cout << "-- Add Task --" << endl << endl;
+    cout << "Title: " << task_title << endl;
+    cout << "Tag: " << ((add_tags)?tag:"(No Tag)") << endl;
+    cout << "Discription: " << task_description;
+ 
+
+    if(add_tags){
+
+        int total_tags = 0;
+        if(!exists_in_file(tag, concat("data\\tasks\\", concat(username, "\\used_tags.txt")))){
+            ifstream fin;
+            fin.open(concat("data\\tasks\\", concat(username, "\\used_tags.txt")));
+            fin >> total_tags;
+            char **tags = new char*[total_tags];
+            for(int i = 0; i < total_tags; i++){
+                fin >> tags[0];
+            }
+            fin.close();
+            ofstream fout;
+            fout.open(concat("data\\tasks\\", concat(username, "\\used_tags.txt")));
+            fout << total_tags + 1;
+            for(int i = 0; i < total_tags; i++){
+                fout << endl << tags[i];
+            }
+            fout << endl << tag;
+            fout.close();
+        }
     }
 
     ofstream fout_title, fout_tag, fout_desc;
@@ -297,6 +448,9 @@ void AddTask(char* username){
     char* path = new char[100];
     path = concat("data\\tasks\\", concat(username, concat("\\", task_title)));
     system(concat("mkdir \"", concat(path, "\"")));
+    system(concat("echo > \"", concat(path, "\\task_title.txt\"")));
+    system(concat("echo > \"", concat(path, "\\task_tag.txt\"")));
+    system(concat("echo > \"", concat(path, "\\task_description.txt\"")));
     
     fout_title.open(concat(path, "\\task_title.txt"));
     fout_tag.open(concat(path, "\\task_tag.txt"));
@@ -348,65 +502,75 @@ void AddTask(char* username){
     getch();
 }
 
-int getSelection(int* selection_var, int max){
-    bool arrow_key_mode = false;
+void ViewTaskList(char* username){
+    char* path_to_task_titles = concat("data\\tasks\\", concat(username, "\\tasks.txt"));
+    int selection_pos = 0;
     int mode = 0;
-    while(true){
-        int key = getch();
-        if(key == 13){
-            mode = 5;
-            return mode;
+    bool task_view_mode = false;
+
+    int total_tasks = 0;
+    ifstream fin;
+    fin.open(path_to_task_titles);
+    fin >> total_tasks;
+    char** Titles = new char*[total_tasks];
+    char** Tags = new char*[total_tasks];
+    char** path_to_tasks = new char*[total_tasks];
+
+    for(int i = 0; i < total_tasks + 1; i++){
+        Titles[i] = new char[100];
+        fin.getline(Titles[i], 100);
+        path_to_tasks[i] = new char[450];
+        path_to_tasks[i] = concat("data\\tasks\\", concat(username, concat("\\", Titles[i])));
+    }
+    fin.close();
+
+    // Adding Tags
+    for(int i = 0; i < total_tasks; i++){
+        fin.open(concat(path_to_tasks[i + 1], "\\task_tag.txt"));
+        Tags[i] = new char[50];
+        fin >> Tags[i];
+        cout << Tags[i];
+        fin.close();
+    }
+    getch();
+
+    while(true){ // Main Task View mode
+        system("cls");
+        cout << "--Task Viewer--" << endl << endl;
+
+        if(task_view_mode){ // when enter pressed on title
+            cout << "Title: " << Titles[selection_pos + 1] << endl;
+            cout << "It's tag: " << Tags[selection_pos] << endl << endl;
+            task_view_mode = false;
         }
-        if(key == 27){
-            exit(0);
-        }
-        if(arrow_key_mode){
-            switch (key)
-            {
-            case 72:    // Up
-                mode = 1;
-                arrow_key_mode = false;
-                break;
-            
-            case 80:    // Down
-                mode = 2;
-                arrow_key_mode = false;
-                break;
-            
-            case 77:    // Right
-                mode = 3;
-                arrow_key_mode = false;
-                break;
-            
-            case 75:    // Left
-                mode = 4;
-                arrow_key_mode = false;
-                break;
-            
-            default:
-                mode = 0;
-                break;
+
+        cout << "Select the task using arrowkeys and select using enter." << endl << endl;
+        for(int i = 1; i < total_tasks + 1; i++){
+            if(selection_pos == i - 1){
+                cout << ">> " << i << "= " << Titles[i] << endl;
             }
-            if (mode != 0){
-                if (mode == 1){
-                    *selection_var -= 1;
-                    if (*selection_var < 0){
-                        *selection_var = max - 1;
-                    }
-                }
-                if (mode == 2){
-                    *selection_var += 1;
-                    if (*selection_var > max - 1){
-                        *selection_var = 0;
-                    }
-                }
-                return mode;
+            else{
+                cout << "-- " << i << "- " << Titles[i] << endl;
             }
         }
-        if(key == 224){
-            arrow_key_mode = true;
+
+        mode = getSelection(&selection_pos, total_tasks);
+
+        if(mode == 5){
+            task_view_mode = true;
         }
     }
+
+    delete[] path_to_task_titles;
+    for(int i = 0; i < total_tasks; i++){
+        delete[] path_to_tasks[i];
+        delete[] Titles[i];
+        delete[] Tags[i];
+    }
+    delete[] path_to_tasks;
+    delete[] Titles;
+    delete[] Tags;
+
 }
 
 void displayUsers(){
@@ -423,7 +587,7 @@ void displayUsers(){
 
 int main(){
     char NotLoginedOptions[4][30] = { "Login", "Register", "EXPERIMENTAL ERASE DATA!!","Exit" };
-    char UserOption[3][15] = { "Add Task", "View Tasks", "Logout" };
+    char UserOption[3][15] = { "Add Task", "View My Tasks", "Logout" };
     system("cls");
     int selection_pos = 0;
     int select_mode = 0;
@@ -479,6 +643,7 @@ int main(){
                     AddTask(username);
                 }
                 else if (selection_pos == 1){
+                    ViewTaskList(username);
                 }
                 else if (selection_pos == 2){
                     login = false;
@@ -486,6 +651,7 @@ int main(){
                 }
             }
         }
+        selection_pos = 0;
     }
     else{
         ifstream fin;
@@ -526,6 +692,7 @@ int main(){
                 }
             }    
             }
+            selection_pos = 0;
         }
         else{
             cout << "Admin User is not defined.." << endl;
