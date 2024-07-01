@@ -343,12 +343,10 @@ void AddTask(char* username){
     ifstream fin_tags;
     fin_tags.open(concat("data\\tasks\\", concat(username, "\\used_tags.txt")));
     fin_tags >> total_tags;
-    cout << total_tags << endl;
     Tags = new char*[total_tags];
     for(int i = 0; i < total_tags; i++){
         Tags[i] = new char[50];
         fin_tags >> Tags[i];
-        cout << Tags[i] << endl;
     }
     fin_tags.close();
 
